@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Variables</title>
+</head>
+<body>
+
+Variables don't exactly exist when working with assembly, instead we allocate space on RAM to create room for a sequence of bytes that represent something.
+
+In C we can define different types of variables such as:
+<br>
+int, float, long, char
+
+<br>
+On a modern 64bit computer
+
+chars are 1 byte or 8 bits
+ints are 4 bytes or 32 bits but on a 32 bit machine are 2 bytes / 16 bits
+longs are 8 bytes
+shorts are 2 bytes
+
+<br>
+when applying modifiers such as unsigned or signed, we are now able to change the range of the values
+
+unsigned chars are still 1 byte but the only numbers they can represent are from 0-255
+signed chars are still 1 byte but can only represent numbers from -128-128
+
+Why you would want to represent a char with a negative value wouldn't make sense so it's important to be mindful.
+
+This pattern continues...
+
+
+<br>
+
+In the m68k assembly we cannot simply do
+`char ourChar = 'a';`
+
+instead this is an abstraction of a slightly more complex instructions but lets break it down
+
+In assembly we use the DC directive to define a constant.  Because in this case a char is 1 byte we would define a as a constant with 1 byte.
+
+But how does DC actually fit in here? we combine it with a name, operation, and a value we want to assign.
+
+we will get
+
+    org $1000
+ourChar DC.b 'a'
+
+this means assign the ascii value of 'a' to the label ourChar as a byte value.
+
+the value of 'a' will then be added to memory at the next available address which in this case is specified by the org operation
+
+so our memory view will now look like:
+
+1000 61 -> hex version of 'a'
+1001 ff
+1002 ff
+
+we see that ourChar is stored at memory address $1000
+
+
+
+what happens if we want to store an integer? well we first must know how large our int value will be, let's say we want an integer to be 4 bytes to stay in line with current standards.
+to our c code of:
+`int ourNumber = 123;`
+
+and convert to assembly, we would do:
+
+    org $1000
+ourNumber DC.L 123
+
+In memory it would look like
+00 00 00 7B
+
+why do we add these 0's in front?
+
+This is because our number 123 doesn't use up all the bytes so we must pad it.
+
+But why in front you might ask?
+
+this is because
+
+00 00 00 7B and 7B 00 00 00
+
+represent 2 different numbers
+
+The left example represents 123 but the right one represents 2063597568 since we have shifted the 16th's place over(remember we are working in hex which is why we dont call it a tens place).
+
+
+What if we want to define a short int where a short is 2 bytes
+
+first lets write out our c expression
+
+`short int ourShortInt = 123;`
+
+now using the same template as before, we can write our assembly code as:
+
+ourShortInt DC.W 123
+
+If we have a memory view of our assembly code, we will notice that again we are padding with 0's but this time only 1 zero infront.
+
+00 7B
+
+we also now understand why we store the 00 infront and not the back.
+
+
+Great so now we know how to store decimal numbers as a variable like object. But what if we want to store the value as a hexadecimal, octal or binary value?
+
+It's quite easy, we simply add a symbol infront of our number
+
+$ is used for hexadecimal
+@ is used for octal
+% is used for binary
+
+Lets see some examples:
+
+What happens if I want to store the hexadecimal value of $AB12 into a short called firstTwo?
+
+org $1000
+firstTwo DC.W $AB12
+
+Easy! We can now look at our memory map and see that
+
+AB 12
+
+are both stored in memory, there is also no padding since our hexadecimal value is also 1 word.
+
+what about an octal value?
+
+lets save the octal value 777 to the variable triple7
+
+triple7 DC.W @777
+
+our memory view looks like this now:
+
+01 FF
+
+Now lets store the binary number 1000 0001 into a variable called ourBinaryNumber.
+
+ourBinaryNumber DC.B %10000001
+
+our memory view will look like:
+
+81
+
+Our memory will always be displayed in hexadecimal.
+
+
+You may have noticed that the size we allocate is always the same or larger than the value being saved, what happens if it's smaller?
+
+lets allocate $1234 to a char named tooBig.
+
+tooBig DC.B $1234
+
+Guess what in this case it doesn't work and we get an error that our value exceeds the range of the type specified.
+
+Awesome, so we have now gone over creating new variables in assembly, lets do some practise problems.
+
+Assuming we are using the m68k isa, what is the size of a word?
+2 bytes
+
+What is the size of a byte in bits?
+8 bits
+
+How many words is a long?
+2 words = 1 long
+
+Convert this c expression to
+`int someNewNumber = 10;`
+
+someNewNumber DC.W 10
+
+
+Store the hexadecimal value $NEWVAL in a variable called newValue
+newValue DC.L $NEWVAL
+
+Store the octal number 888  in a variable called new8s
+trick question, this is not possible since 888 is not a valid octal number!
+
+
+
+</body>
+</html>
